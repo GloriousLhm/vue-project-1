@@ -24,15 +24,19 @@
             <!-- fixed是将这个固定在最右边的 -->
             <el-table-column label="操作" width="100" fixed="right">
               <template scope="scope">
-                <el-button type="text" size="small">删除</el-button>
-                <el-button type="text" size="small">增加</el-button>
+                <el-button type="text" size="small" @click="delSingleGoods(scope.row)">删除</el-button>
+                <!-- 直接 @click="addOrderList(goods)"是不管用的 element中规定的-->
+                <el-button type="text" size="small" @click="addOrderList(scope.row)">增加</el-button>
               </template>
             </el-table-column>
           </el-table>
+          <div class="total-div">
+            数量：{{totalCount}} &nbsp;&nbsp;&nbsp;金额：{{totalMoney}}元
+          </div>
           <div class="div-btn">
             <el-button type="warning">挂单</el-button>
-            <el-button type="danger">删除</el-button>
-            <el-button type="success">结账</el-button>
+            <el-button type="danger" @click="delAllGoods">删除</el-button>
+            <el-button type="success" @click="checkout">结账</el-button>
           </div>
         </el-col>
 
@@ -60,7 +64,7 @@
             <el-tabs>
               <el-tab-pane label="汉堡">
                 <ul class='cookList'>
-                  <li v-for="goods in type0Goods">
+                  <li v-for="goods in type0Goods" @click="addOrderList(goods)">
                     <span class="foodImg"><img :src="goods.goodsImg" width="100%"></span>
                     <span class="foodName">{{goods.goodsName}}</span>
                     <span class="foodPrice">￥{{goods.price}}元</span>
@@ -69,7 +73,7 @@
               </el-tab-pane>
               <el-tab-pane label="小食">
                 <ul class='cookList'>
-                  <li v-for="goods in type1Goods">
+                  <li v-for="goods in type1Goods" @click="addOrderList(goods)">
                     <span class="foodImg"><img :src="goods.goodsImg" width="100%"></span>
                     <span class="foodName">{{goods.goodsName}}</span>
                     <span class="foodPrice">￥{{goods.price}}元</span>
@@ -78,7 +82,7 @@
               </el-tab-pane>
               <el-tab-pane label="饮料">
                 <ul class='cookList'>
-                  <li v-for="goods in type2Goods">
+                  <li v-for="goods in type2Goods" @click="addOrderList(goods)">
                     <span class="foodImg"><img :src="goods.goodsImg" width="100%"></span>
                     <span class="foodName">{{goods.goodsName}}</span>
                     <span class="foodPrice">￥{{goods.price}}元</span>
@@ -87,7 +91,7 @@
               </el-tab-pane>
               <el-tab-pane label="套餐">
                 <ul class='cookList'>
-                  <li v-for="goods in type3Goods">
+                  <li v-for="goods in type3Goods" @click="addOrderList(goods)">
                     <span class="foodImg"><img :src="goods.goodsImg" width="100%"></span>
                     <span class="foodName">{{goods.goodsName}}</span>
                     <span class="foodPrice">￥{{goods.price}}元</span>
@@ -114,6 +118,8 @@
         type1Goods: [],
         type2Goods: [],
         type3Goods: [],
+        totalMoney: 0,
+        totalCount: 0
       }
     },
     mounted: function () {
@@ -142,29 +148,12 @@
       })
     },
     methods: {
+
       // 添加订单列表的方法
       addOrderList (goods) {
+        this.totalMoney = 0;
+        this.totalCount = 0;
         // 商品是否被已经存在于订单列表中
-        // let ishave = false;
-        // for (let i = 0; i < this.tableData.length; i++) {
-        //   console.log(this.tableData[i].goodsId);
-        //   if (this.tableData[i].goodsId == goods.goodsId) {
-        //     ishave = true;
-        //   }
-        // }
-
-        // // 根据判断的值编写业务逻辑
-        // if (ishave) {
-        //   // 改变表格中商品的数量
-        //   //声明一个数组，还需要对tableData中的数组进行过滤
-        //   let arr = this.tableData.filter(o => o.goodsId == goods.goodsId);
-        //   arr[0].count++;
-        // } else {
-        //   // 需要构造一个新的goods
-        //   let newGoods = { goodsId: goods.goodsId, goodsName: goods.goodsName, price: goods.price, count: 1 }
-        //   this.tableData.push(newGoods)
-        // }
-
         let isHave = false;
         //判断是否这个商品已经存在于订单列表
         for (let i = 0; i < this.tableData.length; i++) {
@@ -186,6 +175,49 @@
 
         }
 
+        this.getAllMoney();
+
+
+      },
+      // 模拟结账功能
+      checkout () {
+        if (this.totalCount != 0) {
+          this.tableData = [];
+          this.totalMoney = 0;
+          this.totalCount = 0;
+          // element中提供的message方法
+          this.$message({
+            // 设置message的一些属性的
+            message: '结账成功，感谢你又为店铺出的力',
+            type: 'sucess'
+          })
+        } else {
+          this.$message.error("没有商品需要结账")
+        }
+      },
+      // 删除单个产品
+      delSingleGoods (goods) {
+        console.log(goods);
+        this.tableData = this.tableData.filter(o => o.goodsId != goods.goodsId);
+        this.getAllMoney();
+      },
+      // 汇总数量和金额
+      getAllMoney () {
+        this.totalMoney = 0;
+        this.totalCount = 0;
+        if (this.tableData) {
+          this.tableData.forEach((element) => {
+            this.totalCount += element.count;
+            this.totalMoney = this.totalMoney + (element.price * element.count);
+          })
+
+        }
+      },
+      // 删除全部产品
+      delAllGoods () {
+        this.tableData = [];
+        this.totalMoney = 0;
+        this.totalCount = 0;
       }
     }
   }
@@ -227,6 +259,7 @@
   padding: 2px;
   float: left;
   margin: 2px;
+  cursor: pointer;
 }
 .cookList li span {
   display: block;
@@ -244,6 +277,11 @@
   font-size: 16px;
   padding-left: 10px;
   padding-top: 10px;
+}
+.total-div {
+  background-color: #eee;
+  padding: 10px;
+  border-bottom: 2px solid #666;
 }
 </style>
 
